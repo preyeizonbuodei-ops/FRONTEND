@@ -42,7 +42,7 @@ function AdminLogin() {
     setMessage(null);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/v1/user/admin-login", {
+      const res = await axios.post("https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/admin-login", {
         username: formData.username,
         adminkey: formData.adminkey,
       });

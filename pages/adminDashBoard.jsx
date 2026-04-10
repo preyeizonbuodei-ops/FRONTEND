@@ -22,7 +22,7 @@ const AdminDashboard = () => {
 
   // Create axios instance with token
   const api = axios.create({
-    baseURL: 'http://localhost:5000',   // ← Change to your backend base URL
+    baseURL: 'http://localhost:5000',   
   });
 
   // Add token to every request
@@ -39,7 +39,7 @@ const AdminDashboard = () => {
     setError(null);
 
     try {
-      const response = await api.get('/api/auth/v1/user/get-all-trianees');   // Your protected route
+      const response = await api.get('https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/get-all-trianees');   // Your protected route
 
       console.log("✅ Users fetched successfully:", response.data);
 
@@ -67,7 +67,7 @@ const AdminDashboard = () => {
 
   const downloadUserDoc = async (traineeId) => {
   try {
-    const response = await api.get(`/api/auth/v1/user/download-one-trainee-pdf/${traineeId}`, {
+    const response = await api.get(`https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/download-one-trainee-pdf/${traineeId}`, {
       responseType: "blob",
     });
 
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     if (!confirm("Delete this user permanently?")) return;
 
     try {
-      await api.delete(`/api/auth/v1/user/delete-trainee/${traineeId}`);
+      await api.delete(`https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/delete-trainee/${traineeId}`);
       const updated = users.filter(u => u.id !== traineeId);
       setUsers(updated);
       setFilteredUsers(updated);
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
   const downloadPDF = async () => {
   try {
     // Use your axios instance to call the backend
-    const response = await api.get("/api/auth/v1/user/download-trainees-pdf", {
+    const response = await api.get("https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/download-trainees-pdf", {
       responseType: "blob", // important for file downloads
     });
 
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
           <button
             onClick={async () => {
               try {
-                await api.delete(`/api/auth/v1/user/delete-trainee/${selectedUser}`);
+                await api.delete(`https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/delete-trainee/${selectedUser}`);
                 setUsers(users.filter((u) => u._id !== selectedUser));
                 setFilteredUsers(filteredUsers.filter((u) => u._id !== selectedUser));
                 setShowDeleteModal(false);

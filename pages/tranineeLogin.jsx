@@ -41,9 +41,14 @@ function RegistrationForm() {
       newErrors.email = "Valid email is required.";
     if (!formData.department.trim())
       newErrors.department = "Department is required.";
-    if (!/^\+234\d{10}$/.test(formData.phonenumber))
+// Define the regex for Nigerian numbers
+    const nigerianPhoneRegex = /^(?:070|080|081|090|091)\d{8}$/;
+
+    if (!nigerianPhoneRegex.test(formData.phonenumber)) {
       newErrors.phonenumber =
-        "Phone number must start with +234 and have 10 digits after.";
+        "Phone number must be 11 digits and start with 070, 080, 081, 090, or 091.";
+    }
+
     if (!formData.matricnumber.trim())
       newErrors.matricnumber = "Matric number is required.";
     if (!formData.level) newErrors.level = "Please select your level.";
@@ -63,7 +68,7 @@ function RegistrationForm() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/v1/user/register",
+        "https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/register",
         formData
       );
 
@@ -150,7 +155,7 @@ function RegistrationForm() {
           <input
             type="tel"
             name="phonenumber"
-            placeholder="+234XXXXXXXXXX"
+            placeholder="080XXXXXXXXXX"
             value={formData.phonenumber}
             onChange={handleChange}
             className="w-full p-3 border rounded-md focus:ring-2 focus:ring-indigo-500"
@@ -160,7 +165,7 @@ function RegistrationForm() {
           <input
             type="text"
             name="matricnumber"
-            placeholder="Enter Matric Number"
+            placeholder="mat numb: FUO/**/***/*****"
             value={formData.matricnumber}
             onChange={handleChange}
             className="w-full p-3 border rounded-md focus:ring-2 focus:ring-indigo-500"

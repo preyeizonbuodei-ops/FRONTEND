@@ -73,8 +73,6 @@ const AdminDashboard = () => {
   };
 
   const deleteUser = async (traineeId) => {
-    if (!window.confirm("Delete this user permanently?")) return;
-
     try {
       await api.delete(`/api/auth/v1/user/delete-trainee/${traineeId}`);
       const updated = users.filter(u => u._id !== traineeId);
@@ -101,7 +99,7 @@ const AdminDashboard = () => {
       link.remove();
     } catch (err) {
       console.error("PDF download failed:", err);
-      alert("Failed to download PDF");
+      alert("Failed to download all trainees PDF");
     }
   };
 
@@ -165,7 +163,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
         <div className="h-16 bg-slate-900 border-b border-slate-800 px-4 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -179,50 +177,52 @@ const AdminDashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
-            {/* Search */}
-            <div className="relative hidden md:block">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="bg-slate-800 border border-slate-700 focus:border-violet-500 w-64 lg:w-80 pl-11 pr-6 py-3 rounded-3xl text-sm outline-none"
-              />
-            </div>
+            {/* Download All Button - Always Visible */}
+            <button 
+              onClick={downloadAllPDF}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-2xl font-medium transition-all text-sm sm:text-base"
+            >
+              <FaDownload />
+              <span className="hidden sm:inline">All PDF</span>
+            </button>
 
-            {/* Refresh */}
             <button 
               onClick={fetchAllUsers} 
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-3xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl transition-colors"
             >
               <FaSyncAlt className={loading ? "animate-spin" : ""} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
 
-            {/* Download All PDF */}
-            <button 
-              onClick={downloadAllPDF}
-              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-3xl font-medium transition-all"
-            >
-              <FaDownload />
-              <span className="hidden sm:inline">Download PDF</span>
-            </button>
-
-            {/* Total Count */}
-            <div className="hidden sm:block px-5 py-3 bg-slate-800 rounded-3xl font-medium text-violet-400">
+            <div className="hidden sm:block px-5 py-2.5 bg-slate-800 rounded-3xl font-medium text-violet-400 text-sm">
               Total: {users.length}
             </div>
           </div>
         </div>
 
-        {/* Table Section */}
+        {/* Search Bar - Visible on Mobile */}
+        <div className="p-4 lg:px-8 bg-slate-900 border-b border-slate-800">
+          <div className="relative">
+            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email or department..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="w-full bg-slate-800 border border-slate-700 focus:border-violet-500 pl-11 pr-6 py-3 rounded-3xl text-sm outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Content Area */}
         <div className="flex-1 p-4 lg:p-8 overflow-auto">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl font-semibold mb-6">Registered Trainees</h2>
+            <h2 className="text-2xl font-semibold mb-6 hidden lg:block">Registered Trainees</h2>
 
-            {loading && <div className="text-center py-20 text-slate-400">Loading users...</div>}
+            {loading && (
+              <div className="text-center py-20 text-slate-400">Loading users...</div>
+            )}
             
             {error && (
               <div className="bg-red-900/30 border border-red-500 text-red-400 p-8 rounded-3xl text-center">
@@ -231,68 +231,110 @@ const AdminDashboard = () => {
             )}
 
             {!loading && !error && (
-              <div className="bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[800px]"> {/* Prevents table from shrinking too much */}
-                    <thead>
-                      <tr className="bg-slate-800 border-b border-slate-700">
-                        <th className="text-left py-5 px-6 whitespace-nowrap">NAME</th>
-                        <th className="text-left py-5 px-6 whitespace-nowrap">EMAIL</th>
-                        <th className="text-left py-5 px-6 hidden md:table-cell whitespace-nowrap">DEPARTMENT</th>
-                        <th className="text-left py-5 px-6 hidden lg:table-cell whitespace-nowrap">PHONE</th>
-                        <th className="text-left py-5 px-6 whitespace-nowrap">VALIDATION CODE</th>
-                        <th className="text-center py-5 px-6 whitespace-nowrap">ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-700">
-                      {filteredUsers.map((user) => (
-                        <tr key={user._id} className="hover:bg-slate-800/70 transition-colors">
-                          <td className="py-5 px-6 font-medium">{user.username}</td>
-                          <td className="py-5 px-6 text-sm">{user.email}</td>
-                          <td className="py-5 px-6 hidden md:table-cell">
-                            <span className="px-4 py-1 bg-slate-700 text-xs rounded-3xl">
-                              {user.department || "N/A"}
-                            </span>
-                          </td>
-                          <td className="py-5 px-6 hidden lg:table-cell font-mono text-sm">
-                            {user.phonenumber || "N/A"}
-                          </td>
-                          <td className="py-5 px-6 font-mono text-violet-300">
-                            {user.verificationCode || "N/A"}
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="flex items-center justify-center gap-4">
-                              <button
-                                onClick={() => downloadUserDoc(user._id || user.id)}
-                                className="text-violet-400 hover:text-violet-500 p-2 hover:bg-violet-500/10 rounded-xl transition-colors"
-                                title="Download Document"
-                              >
-                                <FaDownload size={18} />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedUser(user._id || user.id);
-                                  setShowDeleteModal(true);
-                                }}
-                                className="text-red-400 hover:text-red-500 p-2 hover:bg-red-500/10 rounded-xl transition-colors"
-                                title="Delete User"
-                              >
-                                <FaTrash size={18} />
-                              </button>
-                            </div>
-                          </td>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden lg:block bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px]">
+                      <thead>
+                        <tr className="bg-slate-800 border-b border-slate-700">
+                          <th className="text-left py-5 px-6">NAME</th>
+                          <th className="text-left py-5 px-6">EMAIL</th>
+                          <th className="text-left py-5 px-6">DEPARTMENT</th>
+                          <th className="text-left py-5 px-6">PHONE</th>
+                          <th className="text-left py-5 px-6">VALIDATION CODE</th>
+                          <th className="text-center py-5 px-6">ACTIONS</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700">
+                        {filteredUsers.map((user) => (
+                          <tr key={user._id} className="hover:bg-slate-800/70">
+                            <td className="py-5 px-6 font-medium">{user.username}</td>
+                            <td className="py-5 px-6 text-sm">{user.email}</td>
+                            <td className="py-5 px-6">
+                              <span className="px-4 py-1 bg-slate-700 text-xs rounded-3xl">
+                                {user.department || "N/A"}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6 font-mono text-sm">
+                              {user.phonenumber || "N/A"}
+                            </td>
+                            <td className="py-5 px-6 font-mono text-violet-300">
+                              {user.verificationCode || "N/A"}
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex justify-center gap-4">
+                                <button
+                                  onClick={() => downloadUserDoc(user._id)}
+                                  className="text-violet-400 hover:text-violet-500 p-2 hover:bg-violet-500/10 rounded-xl"
+                                  title="Download PDF"
+                                >
+                                  <FaDownload size={20} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedUser(user._id);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  className="text-red-400 hover:text-red-500 p-2 hover:bg-red-500/10 rounded-xl"
+                                  title="Delete"
+                                >
+                                  <FaTrash size={20} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
-                {filteredUsers.length === 0 && (
-                  <div className="text-center py-16 text-slate-500">
-                    No users found matching your search.
-                  </div>
-                )}
-              </div>
+                {/* Mobile Cards - Only Name + Verification Code + Download */}
+                <div className="lg:hidden space-y-4">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-lg font-semibold text-white">{user.username}</p>
+                          <p className="text-violet-400 font-mono text-sm mt-1">
+                            {user.verificationCode || "No Code"}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => downloadUserDoc(user._id)}
+                          className="bg-violet-600 hover:bg-violet-700 text-white p-3 rounded-2xl transition-all active:scale-95"
+                          title="Download Certificate"
+                        >
+                          <FaDownload size={20} />
+                        </button>
+                      </div>
+
+                      <div className="text-xs text-slate-400 space-y-1">
+                        <p><span className="text-slate-500">Email:</span> {user.email}</p>
+                        <p><span className="text-slate-500">Department:</span> {user.department || "N/A"}</p>
+                        <p><span className="text-slate-500">Phone:</span> {user.phonenumber || "N/A"}</p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user._id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="mt-4 w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-500 py-2 border border-red-500/30 hover:border-red-500 rounded-2xl transition-colors"
+                      >
+                        <FaTrash /> Delete Trainee
+                      </button>
+                    </div>
+                  ))}
+
+                  {filteredUsers.length === 0 && (
+                    <div className="text-center py-16 text-slate-500">
+                      No users found.
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -300,8 +342,8 @@ const AdminDashboard = () => {
 
       {/* Download Error Modal */}
       {showDownloadError && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-sm border border-red-500">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 px-4">
+          <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-sm border border-red-500">
             <h2 className="text-xl font-semibold mb-4 text-red-400">Download Error</h2>
             <p className="text-slate-300 mb-6">{downloadErrorMsg}</p>
             <button
@@ -316,11 +358,11 @@ const AdminDashboard = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
-          <div className="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-sm border border-slate-700">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 px-4">
+          <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-sm border border-slate-700">
             <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
             <p className="text-slate-300 mb-6">
-              Are you sure you want to permanently delete this trainee? This action cannot be undone.
+              Are you sure you want to permanently delete this trainee?
             </p>
             <div className="flex gap-3">
               <button

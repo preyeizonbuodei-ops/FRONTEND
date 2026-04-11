@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [showDownloadError, setShowDownloadError] = useState(false);
   const [downloadErrorMsg, setDownloadErrorMsg] = useState("");
 
@@ -30,7 +31,7 @@ const AdminDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/api/auth/v1/user/get-all-trianees');
+      const response = await api.get('https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/get-all-trianees');
       const userList = Array.isArray(response.data) 
         ? response.data 
         : response.data?.users || response.data?.data || [];
@@ -53,9 +54,42 @@ const AdminDashboard = () => {
     }
   };
 
+  // ✅ FIXED: Delete User Function
+  const deleteUser = async (userId) => {
+    if (!userId) return;
+
+    setDeleting(true);
+    try {
+      const response = await api.delete(`https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/delete-trainee/${userId}`);
+
+      if (response.status === 200 || response.status === 204) {
+        // Remove user from state immediately
+        setUsers(prev => prev.filter(user => user._id !== userId));
+        setFilteredUsers(prev => prev.filter(user => user._id !== userId));
+        
+        alert("Trainee deleted successfully");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      
+      if (err.response?.status === 401) {
+        alert("Session expired. Please login again.");
+        localStorage.removeItem('adminToken');
+        window.location.href = '/admin-login';
+      } else {
+        const errorMsg = err.response?.data?.message || "Failed to delete trainee";
+        alert(errorMsg);
+      }
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+    }
+  };
+
   const downloadUserDoc = async (traineeId) => {
     try {
-      const response = await api.get(`/api/auth/v1/user/download-one-trainee-pdf/${traineeId}`, {
+      const response = await api.get(`https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/download-one-trainee-pdf/${traineeId}`, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -66,7 +100,7 @@ const AdminDashboard = () => {
       link.click();
       link.remove();
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setDownloadErrorMsg("Failed to download PDF");
       setShowDownloadError(true);
     }
@@ -74,7 +108,7 @@ const AdminDashboard = () => {
 
   const downloadAllPDF = async () => {
     try {
-      const response = await api.get("/api/auth/v1/user/download-trainees-pdf", { 
+      const response = await api.get("https://free-electrical-learning-backend.onrender.com/api/auth/v1/user/download-trainees-pdf", { 
         responseType: "blob" 
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -86,7 +120,7 @@ const AdminDashboard = () => {
       link.remove();
     } catch (err) {
       alert("Failed to download all PDFs");
-      console.log(err)
+      console.error(err);
     }
   };
 
@@ -116,7 +150,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar - unchanged */}
       <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 transition-transform flex flex-col`}>
 
@@ -146,7 +180,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
+        {/* Header - unchanged */}
         <div className="h-16 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -176,7 +210,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search - unchanged */}
         <div className="p-4 bg-slate-900 border-b border-slate-800">
           <div className="relative">
             <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -190,7 +224,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Mobile Cards - This is what will show on iPhone */}
+        {/* Mobile Cards */}
         <div className="flex-1 p-4 overflow-auto">
           {loading && <div className="text-center py-20 text-slate-400 text-lg">Loading trainees...</div>}
           
@@ -208,7 +242,6 @@ const AdminDashboard = () => {
                 filteredUsers.map((user) => (
                   <div key={user._id} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-lg">
                     
-                    {/* Top Row: Name + Verification Code + Download Button */}
                     <div className="flex justify-between items-start mb-6">
                       <div>
                         <h3 className="text-2xl font-semibold text-white">{user.username}</h3>
@@ -225,7 +258,6 @@ const AdminDashboard = () => {
                       </button>
                     </div>
 
-                    {/* Details */}
                     <div className="text-sm text-slate-400 space-y-2 border-t border-slate-700 pt-5">
                       <p><span className="text-slate-500">Email:</span> {user.email || "—"}</p>
                       <p><span className="text-slate-500">Department:</span> {user.department || "N/A"}</p>
@@ -239,6 +271,7 @@ const AdminDashboard = () => {
                         setShowDeleteModal(true);
                       }}
                       className="mt-6 w-full py-4 border border-red-500/50 hover:border-red-500 text-red-400 rounded-2xl flex items-center justify-center gap-2 transition-colors font-medium"
+                      disabled={deleting}
                     >
                       <FaTrash size={18} /> Delete Trainee
                     </button>
@@ -250,7 +283,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Download Error Modal */}
+      {/* Download Error Modal - unchanged */}
       {showDownloadError && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
           <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-sm">
@@ -266,27 +299,32 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
           <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-sm">
             <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
-            <p className="text-slate-300 mb-6">This action cannot be undone.</p>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to delete this trainee? <br />
+              This action cannot be undone.
+            </p>
             <div className="flex gap-3">
               <button 
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedUser(null);
+                }}
                 className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-2xl"
+                disabled={deleting}
               >
                 Cancel
               </button>
               <button 
-                onClick={async () => {
-                  if (selectedUser) await deleteUser(selectedUser);
-                  setShowDeleteModal(false);
-                }}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-2xl"
+                onClick={() => deleteUser(selectedUser)}
+                disabled={deleting}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-2xl flex items-center justify-center gap-2"
               >
-                Yes, Delete
+                {deleting ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>

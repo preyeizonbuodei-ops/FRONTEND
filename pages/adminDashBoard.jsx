@@ -66,6 +66,7 @@ const AdminDashboard = () => {
       link.click();
       link.remove();
     } catch (err) {
+      console.log(err)
       setDownloadErrorMsg("Failed to download PDF");
       setShowDownloadError(true);
     }
@@ -85,6 +86,7 @@ const AdminDashboard = () => {
       link.remove();
     } catch (err) {
       alert("Failed to download all PDFs");
+      console.log(err)
     }
   };
 
